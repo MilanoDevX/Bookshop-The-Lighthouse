@@ -33,3 +33,12 @@ def get_all_books():
     serialized_books = [ item.serialize() for item in book_list ]
     return jsonify(serialized_books), 200
 
+
+@api.route('/books/<int:id>', methods=['GET'])
+def get_one_book(id):
+    searched_book = Book.query.get(id)
+    if searched_book != None:
+        return jsonify(searched_book.serialize()), 200
+    return jsonify({"error": "Book not found"}), 404
+
+
