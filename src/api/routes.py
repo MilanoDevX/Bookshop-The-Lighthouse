@@ -2,7 +2,7 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 from flask import Flask, request, jsonify, url_for, Blueprint
-from api.models import db, User, Book
+from api.models import db, User, Book, Author
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
 from sqlalchemy.exc import SQLAlchemyError
@@ -35,6 +35,13 @@ def get_all_books():
     return jsonify(serialized_books), 200
 
 
+@api.route('/authors', methods=['GET'])
+def get_all_authors():
+    authors_list = Author.query.all()
+    serialized_authors = [ item.serialize() for item in authors_list ]
+    return jsonify(serialized_authors), 200
+
+
 @api.route('/books/<int:id>', methods=['GET'])
 def get_one_book(id):
     searched_book = Book.query.get(id) # Just by id, or None
@@ -47,12 +54,16 @@ def get_one_book(id):
 def add_new_book():
     try:
         body = request.json
-        new_book = Book()
-        new_book.title = body.get('title')
+        title = body.get('title')
+        new_book = Book(title=title, author=None)
 
         db.session.add(new_book) # adds it to RAM from server
         db.session.commit() # assigns an id to the new book, and stores it in SQL
         return jsonify(new_book.serialize()), 200
+
+    except ValueError as e:
+        db.session.rollback()
+        return jsonify({"error": f"Invalid JSON data: {str(e)}"}), 400
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -61,6 +72,8 @@ def add_new_book():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
+
+ 
 
 
 

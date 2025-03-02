@@ -43,11 +43,15 @@ class Book(db.Model):
     author_id = db.Column(db.Integer, db.ForeignKey("author.id")) # This is necessary because the relationship stablished in Author class.
     author = db.relationship("Author", back_populates="books")
     
+    def __init__(self, title, author):
+        self.title = title
+        self.author = author
+
     def __repr__(self):
         return f'<Book {self.id}>'
 
     def serialize(self):
-        author_data = self.author.serialize() if self.author != None else "Unknown" # It serializes the author instance including his id and name (see serialize func in Author class)
+        author_data = self.author.serialize() #if self.author != None else "Unknown" # It serializes the author instance including his id and name (see serialize func in Author class)
                                                                                     # Also, it verifies if author exists. If not, assign "Unknown" value.
         return {
             "id": self.id,
