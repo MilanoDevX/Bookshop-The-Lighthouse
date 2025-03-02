@@ -30,7 +30,7 @@ def get_all_users():
 
 @api.route('/books', methods=['GET'])
 def get_all_books():
-    book_list = Book.query.all()
+    book_list = Book.query.order_by(Book.id.asc()).all() # Display books sorted by ascending id number
     serialized_books = [ item.serialize() for item in book_list ]
     return jsonify(serialized_books), 200
 
@@ -96,5 +96,28 @@ def remove_book(book_id):
 
     return jsonify({ "msg": "Successful book deletion" }), 200
 
+
+@api.route('/books/<int:book_id>', methods=['PUT'])
+def edit_book(book_id):
+    try:
+        book = Book.query.get(book_id)
+
+        if book == None:
+            return jsonify({ "error": f"the book with id {book_id} is not found in the database" }), 404
+
+        body = request.json
+        new_title = body.get('title')
+        book.title = new_title
+
+        db.session.commit()
+        return jsonify(book.serialize()), 200
+
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
 
 
