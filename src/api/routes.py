@@ -63,7 +63,7 @@ def add_new_book():
         searched_author = Author.query.get(author_id)
 
         if searched_author == None:
-            return jsonify({ "error": "the author is not found en the database" }), 404
+            return jsonify({ "error": f"the author with id {author_id} is not found in the database" }), 404
 
         new_book = Book(title=title, author=searched_author)
 
@@ -83,7 +83,18 @@ def add_new_book():
         db.session.rollback()
         return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
 
- 
+
+@api.route('/books/<int:book_id>', methods=['DELETE'])
+def remove_book(book_id):
+    book = Book.query.get(book_id)
+
+    if book == None:
+            return jsonify({ "error": f"the book with id {book_id} is not found in the database" }), 404
+    
+    db.session.delete(book)
+    db.session.commit()
+
+    return jsonify({ "msg": "Successful book deletion" }), 200
 
 
 
