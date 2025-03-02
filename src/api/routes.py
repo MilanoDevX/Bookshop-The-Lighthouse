@@ -55,7 +55,17 @@ def add_new_book():
     try:
         body = request.json
         title = body.get('title')
-        new_book = Book(title=title, author=None)
+        author_id = body.get('author_id')
+
+        if author_id == None: 
+            return jsonify({ "error": "author_id is required" }), 400
+        
+        searched_author = Author.query.get(author_id)
+
+        if searched_author == None:
+            return jsonify({ "error": "the author is not found en the database" }), 404
+
+        new_book = Book(title=title, author=searched_author)
 
         db.session.add(new_book) # adds it to RAM from server
         db.session.commit() # assigns an id to the new book, and stores it in SQL
