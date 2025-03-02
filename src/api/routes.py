@@ -5,6 +5,7 @@ from flask import Flask, request, jsonify, url_for, Blueprint
 from api.models import db, User, Book
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
+from sqlalchemy.exc import SQLAlchemyError
 
 api = Blueprint('api', __name__)
 
@@ -36,9 +37,30 @@ def get_all_books():
 
 @api.route('/books/<int:id>', methods=['GET'])
 def get_one_book(id):
-    searched_book = Book.query.get(id)
+    searched_book = Book.query.get(id) # Just by id, or None
     if searched_book != None:
         return jsonify(searched_book.serialize()), 200
     return jsonify({"error": "Book not found"}), 404
+
+
+@api.route('/books', methods=['POST'])
+def add_new_book():
+    try:
+        body = request.json
+        new_book = Book()
+        new_book.title = body.get('title')
+
+        db.session.add(new_book) # adds it to RAM from server
+        db.session.commit() # assigns an id to the new book, and stores it in SQL
+        return jsonify(new_book.serialize()), 200
+
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
+
 
 
